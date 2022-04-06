@@ -21,7 +21,7 @@ def safeExtGet(prop, fallback) {
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 buildscript {
     // The Android Gradle plugin is only required when opening the android folder stand-alone.
@@ -40,7 +40,7 @@ buildscript {
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 android {
     compileSdkVersion safeExtGet('compileSdkVersion', DEFAULT_COMPILE_SDK_VERSION)
@@ -110,8 +110,8 @@ afterEvaluate { project ->
     // https://www.oreilly.com/library/view/gradle-beyond-the/9781449373801/ch03.html
     task androidJavadoc(type: Javadoc) {
         source = android.sourceSets.main.java.srcDirs
-        classpath += files(android.bootClasspath)
-        classpath += files(project.getConfigurations().getByName('compile').asList())
+        project.getConfigurations().getByName('implementation').setCanBeResolved(true)
+        classpath += files(project.getConfigurations().getByName('implementation').asList())
         include '**/*.java'
     }
 
@@ -140,12 +140,43 @@ afterEvaluate { project ->
         archives androidJavadocJar
     }
 
-    task installArchives(type: Upload) {
-        configuration = configurations.archives
-        repositories.mavenDeployer {
-            // Deploy to react-native-event-bridge/maven, ready to publish to npm
-            repository url: "file://${projectDir}/../android/maven"
-            configureReactNativePom pom
+    publishing {
+            publications {
+                maven(MavenPublication) {
+                    def packageJson = new groovy.json.JsonSlurper().parseText(file('../package.json').text)
+
+                    artifact androidSourcesJar
+                    artifactId packageJson.name
+                    version packageJson.version
+
+                    pom {
+                        name  = packageJson.title
+                        group = "com.raygun.react"
+                        description = packageJson.description
+                        url = packageJson.repository.baseUrl
+
+                        licenses {
+                            license {
+                                name = packageJson.license
+                                url = packageJson.repository.baseUrl + '/blob/master/' + packageJson.licenseFilename
+                                distribution = 'repo'
+                            }
+                        }
+
+                        developers {
+                            developer {
+                                id = packageJson.author.username
+                                name = packageJson.author.name
+                            }
+                        }
+                    }
+                }
+            }
+
+            repositories {
+                maven {
+                    url "file://${projectDir}/../android/libs"
+                }
+            }
         }
-    }
 }
