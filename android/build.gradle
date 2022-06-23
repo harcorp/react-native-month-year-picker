@@ -115,10 +115,10 @@ afterEvaluate { project ->
 //        include '**/*.java'
 //    }
 
-    task androidJavadocJar(type: Jar, dependsOn: androidJavadoc) {
-        classifier = 'javadoc'
-        from androidJavadoc.destinationDir
-    }
+//    task androidJavadocJar(type: Jar, dependsOn: androidJavadoc) {
+//        classifier = 'javadoc'
+//        from androidJavadoc.destinationDir
+//    }
 
     task androidSourcesJar(type: Jar) {
         classifier = 'sources'
@@ -137,7 +137,7 @@ afterEvaluate { project ->
 
     artifacts {
         archives androidSourcesJar
-        archives androidJavadocJar
+//        archives androidJavadocJar
     }
 
     publishing {
